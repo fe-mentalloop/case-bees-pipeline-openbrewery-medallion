@@ -37,7 +37,7 @@ pipeline-openbrewery-medallion/
 
 ## Setup Local
 1. Clone o repositório:
-   ````git clone git@github.com:SeuUser/pipeline-openbrewery-medallion.git````
+   ````git clone git@github.com:fe-mentalloop/pipeline-openbrewery-medallion.git````
    ````cd pipeline-openbrewery-medallion````
 2. Instale dependências Python:
   ````pip install -r requirements.txt````
