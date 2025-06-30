@@ -28,7 +28,6 @@ pipeline-openbrewery-medallion/
 │ ├── test_bronze.py # Testes Bronze
 │ ├── test_silver.py # Testes Silver
 │ └── test_gold.py # Testes Gold
-├── notebooks/ # Protótipos Jupyter/Databricks
 ├── docker-compose.yml # Airflow + Postgres + Redis
 ├── requirements.txt # Dependências Python
 └── README.md # Esta documentação
