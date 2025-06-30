@@ -46,6 +46,7 @@ pipeline-openbrewery-medallion/
 
 4. Execução Manual
 
+```
   Bronze Layer
   
   spark-submit --packages io.delta:delta-core_2.12:2.1.0 src/bronze.py
@@ -57,6 +58,8 @@ pipeline-openbrewery-medallion/
   Gold Layer
   
   spark-submit --packages io.delta:delta-core_2.12:2.1.0 src/gold.py
+
+```
 
 Orquestração com Airflow
 
