@@ -16,6 +16,7 @@ Este projeto implementa um pipeline de dados para consumir informações da Open
 - Acesso à internet para consumir a API
 
 ## Estrutura do Repositório
+````
 pipeline-openbrewery-medallion/
 ├── src/
 │ ├── bronze.py # Ingestão Bronze
@@ -31,18 +32,18 @@ pipeline-openbrewery-medallion/
 ├── docker-compose.yml # Airflow + Postgres + Redis
 ├── requirements.txt # Dependências Python
 └── README.md # Esta documentação
+````
 
 
 ## Setup Local
 1. Clone o repositório:
-   ```bash
-   git clone git@github.com:SeuUser/pipeline-openbrewery-medallion.git
-   cd pipeline-openbrewery-medallion
+   ````git clone git@github.com:SeuUser/pipeline-openbrewery-medallion.git````
+   ````cd pipeline-openbrewery-medallion````
 2. Instale dependências Python:
-  pip install -r requirements.txt
+  ````pip install -r requirements.txt````
 
 3. (Opcional) Configure Databricks CLI:
-  - pip install databricks-cli && databricks configure --token
+  ```- pip install databricks-cli && databricks configure --token```
 
 4. Execução Manual
 
@@ -68,8 +69,10 @@ Orquestração com Airflow
  - docker-compose up -d
 
 2. Acesse o Airflow UI:
+   
    http://localhost:8080
-3. Habilite a DAG `medallion_pipeline` e aguarde execução agendada diariamente.
+   
+4. Habilite a DAG `medallion_pipeline` e aguarde execução agendada diariamente.
 
 ## Testes Automatizados
 Execute todos os testes com:
