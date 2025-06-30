@@ -41,10 +41,7 @@ pipeline-openbrewery-medallion/
 2. Instale dependências Python:
   ````pip install -r requirements.txt````
 
-3. (Opcional) Configure Databricks CLI:
-  ```- pip install databricks-cli && databricks configure --token```
-
-4. Execução Manual
+3. Execução Manual
 
 ```
   Bronze Layer
@@ -97,6 +94,6 @@ Trade-offs e Escolhas de Design
   
   - Silver Overwrite: simplifica idempotência, mas pode reprocessar dados históricos.
   
-  - Orquestração via Airflow: robusta e amplamente adotada, ainda que exija infraestrut- ura.
+  - Orquestração via Airflow: robusta e amplamente adotada, ainda que exija infraestrutura.
   
   - Testes Pytest: garantem qualidade de código e facilitem manutenção.
