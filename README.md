@@ -1,99 +1,79 @@
 # pipeline-openbrewery-medallion
 
-## Visão Geral
-Este projeto implementa um pipeline de dados para consumir informações da Open Brewery DB API e armazená-las em um Data Lake seguindo a **arquitetura medallion** (Bronze, Silver e Gold). O objetivo é demonstrar habilidades em ingestão de dados, transformação, armazenamento em Delta Lake, orquestração com Airflow, testes automatizados e monitoramento.
+## Visão Geral  
+Este projeto implementa um pipeline de dados end-to-end que consome a Open Brewery DB API, aplica a **arquitetura medallion** (Bronze / Silver / Gold) e persiste tudo em Delta Lake, orquestrado por Airflow em containers Docker.
 
-## Arquitetura Medallion
-- **Bronze**: dados brutos obtidos da API, em formato JSON, persistidos em Delta Lake.  
-- **Silver**: dados limpos e transformados, convertidos para Parquet/Delta, particionados por estado (`state`).  
-- **Gold**: camada analítica com agregação do número de cervejarias por tipo e por estado.
+## Arquitetura Medallion  
+- **Bronze**  
+  - Ingestão raw JSON da API (paginação completa)  
+  - Armazenado em Delta Lake em `datalake/bronze/`  
+- **Silver**  
+  - Leitura da camada Bronze  
+  - Seleção/limpeza de colunas relevantes  
+  - Conversão para Delta/Parquet e **particionamento** por `state`  
+  - Gravação em `datalake/silver/`  
+- **Gold**  
+  - Leitura da camada Silver  
+  - Agregação de quantidade de cervejarias por `brewery_type` e `state`  
+  - Gravação em `datalake/gold/`
 
-## Pré-requisitos
-- **Databricks Community Edition** (opcional) ou Apache Spark + Delta Lake local.  
-- **Python 3.9+**  
-- **Apache Airflow 2.x** (via Docker Compose)  
-- **Docker & Docker Compose** (para Airflow)  
-- Acesso à internet para consumir a API
+## Estrutura do Repositório  
 
-## Estrutura do Repositório
 ````
 pipeline-openbrewery-medallion/
 ├── src/
-│ ├── bronze.py # Ingestão Bronze
-│ ├── silver.py # Transformação Silver
-│ └── gold.py # Agregação Gold
+│ ├── bronze.py # ingestão Bronze
+│ ├── silver.py # transformação Silver
+│ └── gold.py # agregação Gold
 ├── dags/
-│ └── pipeline_dag.py # DAG Airflow
+│ └── pipeline_dag.py # DAG Airflow (Bronze→Silver→Gold)
 ├── tests/
-│ ├── test_bronze.py # Testes Bronze
-│ ├── test_silver.py # Testes Silver
-│ └── test_gold.py # Testes Gold
-├── docker-compose.yml # Airflow + Postgres + Redis
-├── requirements.txt # Dependências Python
-└── README.md # Esta documentação
+│ ├── test_bronze.py # pytest Bronze
+│ ├── test_silver.py # pytest Silver
+│ └── test_gold.py # pytest Gold
+├── Dockerfile.airflow # imagem Airflow + Spark + Delta + Requests
+├── docker-compose.yml # orquestração Postgres, Redis, Airflow, Scheduler
+├── requirements.txt # libs extras (para build Docker)
+└── README.md # esta documentação
+
 ````
 
+## Pré-requisitos  
 
-## Setup Local
-1. Clone o repositório:
-   ````git clone git@github.com:fe-mentalloop/pipeline-openbrewery-medallion.git````
-   ````cd pipeline-openbrewery-medallion````
-2. Instale dependências Python:
-  ````pip install -r requirements.txt````
+- **Docker** ≥ 20.10 & **Docker Compose** ≥ 1.29
 
-3. Execução Manual
+## Execução via Docker
 
-```
-  Bronze Layer
-  
-  spark-submit --packages io.delta:delta-core_2.12:2.1.0 src/bronze.py
-  
-  Silver Layer
-  
-  spark-submit --packages io.delta:delta-core_2.12:2.1.0 src/silver.py
-  
-  Gold Layer
-  
-  spark-submit --packages io.delta:delta-core_2.12:2.1.0 src/gold.py
+   1. Build da Imagem Airflow+Spark
+      
+      ```
+      docker-compose build airflow
+      ```
+      
+   2. Subir Containers
 
-```
+       ```
+      docker-compose up -d
+      ```
 
-Orquestração com Airflow
+   3. Verifica Health
 
-1. Inicialize containers:
+      ```
+      docker-compose ps
+      ```
 
- - docker-compose up -d
+   4. Acessar UI do Airflow
+      
+      - URL: http://localhost:8080
+      
+      - Login/Senha padrão: airflow / airflow
+      
+      - Ative a DAG medallion_pipeline e clique em ▶️ “Trigger DAG”.
 
-2. Acesse o Airflow UI:
-   
-   http://localhost:8080
-   
-4. Habilite a DAG `medallion_pipeline` e aguarde execução agendada diariamente.
-
-## Testes Automatizados
-Execute todos os testes com:
-
-```
-pytest --maxfail=1 --disable-warnings -q
-
-```
-
-Monitoramento e Alertas
-
-  - Airflow: e-mails configurados em default_args no DAG.
-  
-  - Data Quality: recomenda-se usar Great Expectations ou validações customizadas:
-    
-    - Checar row counts entre camadas.
-    
-    - Validar schema após transformações.
-    
-Trade-offs e Escolhas de Design
-
-  - Delta Lake: permite ACID e time travel, ideal para medallion.
-  
-  - Silver Overwrite: simplifica idempotência, mas pode reprocessar dados históricos.
-  
-  - Orquestração via Airflow: robusta e amplamente adotada, ainda que exija infraestrutura.
-  
-  - Testes Pytest: garantem qualidade de código e facilitem manutenção.
+   5. Validar Outputs
+      ```
+      datalake/
+         ├── bronze/ 
+         ├── silver/ 
+         └── gold/
+      ```
