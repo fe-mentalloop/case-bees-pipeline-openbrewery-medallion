@@ -43,26 +43,20 @@ pipeline-openbrewery-medallion/
 - **Docker** ≥ 20.10 & **Docker Compose** ≥ 1.29
 
 ## Execução via Docker
-
-   1. Build da Imagem Airflow+Spark
       
-      ```
-      docker-compose build airflow
-      ```
-      
-   2. Subir Containers
+   1. Build Das Imagens e Subida de Containers
 
-       ```
-      docker-compose up -d
+      ```
+      docker-compose up --build -d
       ```
 
-   3. Verifica Health
+   2. Verifica Health
 
       ```
       docker-compose ps
       ```
 
-   4. Acessar UI do Airflow
+   3. Acessar UI do Airflow
       
       - URL: http://localhost:8080
       
@@ -70,7 +64,7 @@ pipeline-openbrewery-medallion/
       
       - Ative a DAG medallion_pipeline e clique em ▶️ “Trigger DAG”.
 
-   5. Validar Outputs
+   4. Validar Outputs
       ```
       datalake/
          ├── bronze/ 
