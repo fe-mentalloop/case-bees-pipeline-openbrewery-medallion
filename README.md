@@ -1,4 +1,4 @@
-# pipeline-openbrewery-medallion
+# Case Bees - Felipe de Lima Santiago
 
 ## Visão Geral  
 Este projeto implementa um pipeline de dados end-to-end que consome a Open Brewery DB API, aplica a **arquitetura medallion** (Bronze / Silver / Gold) e persiste tudo em Delta Lake, orquestrado por Airflow em containers Docker.
@@ -41,7 +41,7 @@ pipeline-openbrewery-medallion/
 ## Pré-requisitos  
 
 - **Docker** ≥ 20.10 & **Docker Compose** ≥ 1.29
-
+  
 ## Execução via Docker
       
    1. Build Das Imagens e Subida de Containers
@@ -56,11 +56,24 @@ pipeline-openbrewery-medallion/
       docker-compose ps
       ```
 
+  3. Registrar seu usuário
+     
+    ```
+     docker-compose exec airflow \
+     airflow users create \
+    --username recrutador \
+    --firstname Gustavo\
+    --lastname Bess \
+    --role Admin \
+    --email recruiter@example.com \
+    --password recrutador
+     ``` 
+
    3. Acessar UI do Airflow
       
       - URL: http://localhost:8080
       
-      - Login/Senha padrão: airflow / airflow
+      - Login/Senha padrão: recrutador / recrutador
       
       - Ative a DAG medallion_pipeline e clique em ▶️ “Trigger DAG”.
 
@@ -71,3 +84,28 @@ pipeline-openbrewery-medallion/
          ├── silver/ 
          └── gold/
       ```
+
+## Testes Automatizados
+
+1. Instale as bibliotecas
+   
+```
+pip install -r requirements.txt
+```
+
+2. Execute os testes
+```
+pytest tests/ --maxfail=1 -q
+```
+
+## Monitoramento & Alertas
+
+  - Retries: todas as tasks Airflow com retries=3, retry_delay=5m.
+  - Data Quality: podem ser adicionados checks de row count/schema no DAG.
+
+## Trade-offs & Design Choices
+
+  - Pure-Python (pandas + pyarrow) para simplicidade em container.
+  - Airflow em Docker usando LocalExecutor + Postgres.
+  - Delta Lake (via delta-spark) preserva ACID e compatibilidade.
+  - Testes com pytest garantem qualidade de cada camada.
