@@ -87,15 +87,16 @@ pipeline-openbrewery-medallion/
 
 ## Testes Automatizados
 
-1. Instale as bibliotecas
+1. Inicie a venv
    
 ```
-pip install -r requirements.txt
+.\.venv\Scripts\Activate.ps1
 ```
 
-2. Execute os testes
+2. Execute pytest
+
 ```
-pytest tests/ --maxfail=1 -q
+python -m pytest tests/ --maxfail=1 -q
 ```
 
 ## Monitoramento & Alertas
