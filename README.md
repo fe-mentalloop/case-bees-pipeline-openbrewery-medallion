@@ -59,14 +59,8 @@ pipeline-openbrewery-medallion/
   3. Registrar seu usuário
      
     ```
-     docker-compose exec airflow \
-     airflow users create \
-    --username recrutador \
-    --firstname Gustavo\
-    --lastname Bess \
-    --role Admin \
-    --email recruiter@example.com \
-    --password recrutador
+    docker-compose exec airflow airflow users create -u bees -f Felipe -l Santiago -r Admin -e felipelimasant22@gmail.com -p bees
+
      ``` 
 
    3. Acessar UI do Airflow
