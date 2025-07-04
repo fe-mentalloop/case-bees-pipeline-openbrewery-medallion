@@ -78,19 +78,27 @@ pipeline-openbrewery-medallion/
 
 ## Testes Automatizados
 
-1. Inicie a venv
+1. Crie um ambiente virtual (venv)
    
   ```
-  .\.venv\Scripts\Activate.ps1
+  python -m venv case_bees
   ```
 
-2. Instale as dependencias.
+2. Inicie a venv
+   
+  ```
+  .\case_bees\Scripts\Activate
+  ```
+
+3. Instale as dependencias.
 
   ```
-  pip install -r requirements.txt
+  python.exe -m pip install --upgrade pip
+  
+  pip install -r .\requirements.txt
   ```
 
-3. Execute pytest
+4. Execute pytest
 
   ```
   python -m pytest tests/ --maxfail=1 -q

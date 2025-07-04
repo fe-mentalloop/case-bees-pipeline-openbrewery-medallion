@@ -1,47 +1,57 @@
+import json
 from pathlib import Path
+
 import pandas as pd
 import pytest
-from src.gold import main as gold_main
+from unittest.mock import MagicMock
 
-BASE_DIR   = Path(__file__).resolve().parent.parent
-SILVER_DIR = BASE_DIR / "datalake" / "silver"
-GOLD_DIR   = BASE_DIR / "datalake" / "gold"
+import src.bronze as bronze_module
 
-def test_gold_aggregation():
-    # Prepara a camada Silver manualmente
-    # Limpa e recria pastas state=NY e state=CA
-    (SILVER_DIR / "state=NY").mkdir(parents=True, exist_ok=True)
-    (SILVER_DIR / "state=CA").mkdir(parents=True, exist_ok=True)
-    # garante que gold/ exista (será preenchido pelo gold_main)
-    (GOLD_DIR).mkdir(parents=True, exist_ok=True)
+def test_fetch_all_breweries_pagination(monkeypatch):
+    # Prepara os objetos MagicMock para simular as respostas HTTP #
+    resp1 = MagicMock()
+    resp1.raise_for_status.return_value = None              # sem exceção
+    resp1.json.return_value = [{"id": 1}, {"id": 2}]       # primeiro batch
 
-    # Cria dois registros em NY e um em CA
-    # inclui a coluna 'state', mas o gold_main irá descartá-la e reinjetar
-    df_ny = pd.DataFrame([
-        {"id": 1, "state": "NY", "brewery_type": "micro"},
-        {"id": 2, "state": "NY", "brewery_type": "micro"},
-    ])
-    df_ca = pd.DataFrame([
-        {"id": 3, "state": "CA", "brewery_type": "brewpub"},
-    ])
-    # Grava como data.parquet em cada partição
-    df_ny.to_parquet(SILVER_DIR / "state=NY" / "data.parquet", index=False)
-    df_ca.to_parquet(SILVER_DIR / "state=CA" / "data.parquet", index=False)
+    resp2 = MagicMock()
+    resp2.raise_for_status.return_value = None              # sem exceção
+    resp2.json.return_value = []                            # segundo batch vazio → encerra paginação
 
-    # Executa a agregação
-    gold_main()
+    # Cola os mocks numa lista para serem consumidos em sequência #
+    calls = [resp1, resp2]
 
-    # Arquivo de saída
-    gold_file = GOLD_DIR / "breweries_agg.parquet"
-    # Deve existir e ser um arquivo
-    assert gold_file.exists()
-    assert gold_file.is_file()
+    # Stub de requests.get que retorna os mocks em ordem #
+    def fake_get(*args, **kwargs):
+        return calls.pop(0)
 
-    # Lê o parquet de gold e verifica os counts
-    df_out = pd.read_parquet(gold_file)
-    results = {
-        (row.state, row.brewery_type, row.brewery_count)
-        for _, row in df_out.iterrows()
-    }
-    assert ("NY", "micro", 2) in results
-    assert ("CA", "brewpub", 1) in results
+    # Substitui requests.get dentro do módulo bronze pelo nosso fake_get
+    monkeypatch.setattr(bronze_module.requests, "get", fake_get)
+
+    # Chama a função real e verifica o resultado final
+    result = bronze_module.fetch_all_breweries(page_size=2)
+    assert isinstance(result, list)
+    assert result == [{"id": 1}, {"id": 2}]
+
+
+def test_main_writes_json(tmp_path, monkeypatch):
+    # Override do RAW_PATH para usar tmp_path isolado
+    fake_raw = tmp_path / "bronze"
+    monkeypatch.setattr(bronze_module, "RAW_PATH", fake_raw)
+
+    # Mocka fetch_all_breweries para não chamar HTTP e retornar dados fixos
+    sample = [{"id": 42, "name": "Test Brewery"}]
+    monkeypatch.setattr(bronze_module, "fetch_all_breweries", lambda **kw: sample)
+
+    # Executa o main
+    bronze_module.main()
+
+    # Verifica que exatamente um arquivo JSON Lines foi criado
+    files = list(fake_raw.glob("breweries_*.json"))
+    assert len(files) == 1
+
+    # Lê o JSON Lines e valida colunas e valores
+    df = pd.read_json(files[0], lines=True)
+    assert {"id", "name", "ingest_timestamp"}.issubset(df.columns)
+    assert df.loc[0, "id"] == 42
+    assert df.loc[0, "name"] == "Test Brewery"
+    pd.to_datetime(df.loc[0, "ingest_timestamp"])

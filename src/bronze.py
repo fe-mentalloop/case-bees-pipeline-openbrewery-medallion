@@ -15,7 +15,7 @@ def fetch_all_breweries(page_size=50):
     page = 1
     all_data = []
     while True:
-        resp = requests.get(url, params={"page": page, "per_page": page_size})
+        resp = requests.get(url, params={"page": page, "per_page": page_size}, timeout=(3, 10))
         resp.raise_for_status()
         batch = resp.json()
         if not batch:
