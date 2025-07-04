@@ -9,7 +9,7 @@ BRONZE_DIR = BASE_DIR / "datalake" / "bronze"
 SILVER_DIR = BASE_DIR / "datalake" / "silver"
 
 def test_silver_partitions_and_parquet(tmp_path):
-    # cria raw JSON com 3 registros (um sem state)
+    # Cria raw JSON com 3 registros (um sem state)
     BRONZE_DIR.mkdir(parents=True)
     data = [
         {"id":1, "name":"A", "brewery_type":"micro",  "city":"X", "state":"CA", "country":"US"},
@@ -21,15 +21,14 @@ def test_silver_partitions_and_parquet(tmp_path):
         for rec in data:
             fp.write(json.dumps(rec) + "\n")
 
-    # roda transformação
+    # Roda transformação
     silver_main()
 
-    # espera dirs partitionados
+    # Espera dirs partitionados
     assert (SILVER_DIR/"state=CA").is_dir()
     assert (SILVER_DIR/"state=NY").is_dir()
 
-    # lê tudo via pandas (aponta para o dir root)
+    # Lê tudo via pandas (aponta para o dir root)
     df = pd.read_parquet(SILVER_DIR).astype(str)
-    print(df)
     assert len(df)==2
     assert set(df["state"])=={"CA","NY"}

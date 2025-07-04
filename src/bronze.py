@@ -25,12 +25,11 @@ def fetch_all_breweries(page_size=50):
     return all_data
 
 def main():
-    # Garante que o diretório existe
-    os.makedirs(RAW_PATH, exist_ok=True)
+    # Garante que /bronze exista
+    RAW_PATH.mkdir(parents=True, exist_ok=True)
 
-    # Busca e dá um log do total
+    # Busca informações
     data = fetch_all_breweries()
-    print(f"Fetched {len(data)} breweries")
 
     # Prepara DataFrame e marca timestamp
     df = pd.DataFrame(data)
@@ -40,7 +39,7 @@ def main():
     filename = f"breweries_{datetime.now():%Y%m%d_%H%M%S}.json"
     out = os.path.join(RAW_PATH, filename)
 
-    # Grava JSON Lines
+    # Grava JSON
     df.to_json(out, orient="records", lines=True, date_format="iso")
     print("Bronze escrito em", out)
 
