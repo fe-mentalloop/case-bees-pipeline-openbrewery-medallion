@@ -6,7 +6,7 @@ Este projeto implementa um pipeline de dados end-to-end que consome a Open Brewe
 ## Arquitetura Medallion  
 - **Bronze**  
   - Ingestão raw JSON da API (paginação completa)  
-  - Armazenado em Delta Lake em `datalake/bronze/`  
+  - Armazenado em JSON Lines em `datalake/bronze/`  
 - **Silver**  
   - Leitura da camada Bronze  
   - Seleção/limpeza de colunas relevantes  
