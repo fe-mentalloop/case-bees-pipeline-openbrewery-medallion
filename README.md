@@ -1,7 +1,7 @@
 # Case Bees - Felipe de Lima Santiago
 
 ## Visão Geral  
-Este projeto implementa um pipeline de dados end-to-end que consome a Open Brewery DB API, aplica a **arquitetura medallion** (Bronze / Silver / Gold) e persiste tudo em Delta Lake, orquestrado por Airflow em containers Docker.
+Este projeto implementa um pipeline de dados end-to-end que consome a Open Brewery DB API, aplica a **arquitetura medallion** (Bronze / Silver / Gold) e persiste tudo em **Parquet** (via pandas + pyarrow), orquestrado por Airflow em containers Docker.
 
 ## Arquitetura Medallion  
 - **Bronze**  
@@ -22,18 +22,19 @@ Este projeto implementa um pipeline de dados end-to-end que consome a Open Brewe
 ````
 pipeline-openbrewery-medallion/
 ├── src/
-│ ├── bronze.py # ingestão Bronze
-│ ├── silver.py # transformação Silver
-│ └── gold.py # agregação Gold
+│ ├── bronze.py # Bronze layer 
+│ ├── silver.py # Silver layer
+│ └── gold.py # Gold layer
 ├── dags/
 │ └── pipeline_dag.py # DAG Airflow (Bronze→Silver→Gold)
 ├── tests/
-│ ├── test_bronze.py # pytest Bronze
-│ ├── test_silver.py # pytest Silver
-│ └── test_gold.py # pytest Gold
-├── Dockerfile.airflow # imagem Airflow + Spark + Delta + Requests
-├── docker-compose.yml # orquestração Postgres, Redis, Airflow, Scheduler
-├── requirements.txt # libs extras (para build Docker)
+│ ├── conftest.py # fixture limpa datalake/ antes/depois
+│ ├── test_bronze.py
+│ ├── test_silver.py
+│ └── test_gold.py
+├── Dockerfile.airflow # Airflow + pandas + pyarrow + requests
+├── docker-compose.yml # Postgres, Redis, Airflow (LocalExecutor)
+├── requirements.txt # dependências Python
 └── README.md # esta documentação
 
 ````
@@ -41,6 +42,7 @@ pipeline-openbrewery-medallion/
 ## Pré-requisitos  
 
 - **Docker** ≥ 20.10 & **Docker Compose** ≥ 1.29
+- (Opcional) Python 3.9+ & `pip install -r requirements.txt` para execução local/testes
   
 ## Execução via Docker
       
@@ -50,54 +52,49 @@ pipeline-openbrewery-medallion/
       docker-compose up --build -d
       ```
 
-   2. Verifica Health
-
-      ```
-      docker-compose ps
-      ```
-
-  3. Registrar seu usuário
+  2. Registrar usuário airflow
      
-    ```
-     docker-compose exec airflow \
-     airflow users create \
-    --username recrutador \
-    --firstname Gustavo\
-    --lastname Bess \
-    --role Admin \
-    --email recruiter@example.com \
-    --password recrutador
-     ``` 
+      ```
+      docker-compose exec airflow airflow users create -u bees -f Felipe -l Santiago -r Admin -e felipelimasant22@gmail.com -p bees
+      ``` 
 
-   3. Acessar UI do Airflow
+  3. Acessar UI do Airflow
       
       - URL: http://localhost:8080
       
-      - Login/Senha padrão: recrutador / recrutador
+      - Login/Senha padrão: bees / bees
       
       - Ative a DAG medallion_pipeline e clique em ▶️ “Trigger DAG”.
 
-   4. Validar Outputs
+  4. Validar Outputs
+
       ```
-      datalake/
-         ├── bronze/ 
-         ├── silver/ 
-         └── gold/
+        # ├── bronze/
+        # ├── silver/
+        # │   └── state=XX/data.parquet
+        # └── gold/
+        #     └── breweries_agg.parquet
       ```
 
 ## Testes Automatizados
 
 1. Inicie a venv
    
-```
-.\.venv\Scripts\Activate.ps1
-```
+  ```
+  .\.venv\Scripts\Activate.ps1
+  ```
 
-2. Execute pytest
+2. Instale as dependencias.
 
-```
-python -m pytest tests/ --maxfail=1 -q
-```
+  ```
+  pip install -r requirements.txt
+  ```
+
+3. Execute pytest
+
+  ```
+  python -m pytest tests/ --maxfail=1 -q
+  ```
 
 ## Monitoramento & Alertas
 
@@ -106,7 +103,10 @@ python -m pytest tests/ --maxfail=1 -q
 
 ## Trade-offs & Design Choices
 
-  - Pure-Python (pandas + pyarrow) para simplicidade em container.
-  - Airflow em Docker usando LocalExecutor + Postgres.
-  - Delta Lake (via delta-spark) preserva ACID e compatibilidade.
-  - Testes com pytest garantem qualidade de cada camada.
+  - Python puro (pandas + pyarrow) em vez de Spark, para simplificar o container
+
+  - Particionamento manual em Silver para evitar conflitos de tipos no Parquet
+
+  - Airflow LocalExecutor com Postgres + Redis em Docker Compose para fácil setup
+
+  - pytest com fixture limpa datalake/ antes/depois, garantindo testes isolados.

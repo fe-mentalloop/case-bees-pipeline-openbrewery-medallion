@@ -1,0 +1,28 @@
+FROM apache/airflow:2.3.0-python3.9
+
+# 1) Copia o requirements para dentro do container
+COPY requirements.txt /requirements.txt
+
+# 2) Muda para o usuário airflow e instala as libs via --user
+USER airflow
+
+# Garante que pip está atualizado no ambiente do airflow user
+RUN pip install --user --upgrade pip setuptools wheel
+
+# Instala tudo do requirements para ~/.local
+RUN pip install --user --no-cache-dir -r /requirements.txt
+
+# 3) Ajusta PATH para incluir o binário pip instalado em --user
+ENV PATH=/home/airflow/.local/bin:$PATH
+
+# 4) Volta para root só para copiar código
+USER root
+
+COPY dags/       /opt/airflow/dags/
+COPY src/        /opt/airflow/src/
+
+# 5) Ajusta permissões
+RUN chown -R airflow: /opt/airflow/dags /opt/airflow/src
+
+# 6) Retorna ao usuário airflow para rodar o Airflow
+USER airflow
